@@ -1130,53 +1130,61 @@
         let isAdmin = false;
 
         // Verificar se o usuário está logado
-        auth.onAuthStateChanged((user) => {
+        auth.onAuthStateChanged(async (user) => {
             console.log("Estado de autenticação mudou:", user ? user.email : "Nenhum usuário logado");
             
             if (user) {
                 currentUser = user;
                 console.log("Usuário autenticado:", user.uid, user.email);
                 
-                // Verificar se é administrador
-                const adminEmail = "jeffinho.oliveira94@gmail.com";
-                if (user.email === adminEmail) {
-                    isAdmin = true;
-                    console.log("Usuário é administrador");
-                    // Mostrar aba de administrador apenas para o admin
-                    document.querySelectorAll('.admin-only').forEach(el => {
-                        el.style.display = 'flex';
-                    });
-                } else {
-                    // Garantir que a aba de administrador fique oculta para usuários comuns
-                    document.querySelectorAll('.admin-only').forEach(el => {
-                        el.style.display = 'none';
-                    });
-                }
-                
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('mainSystem').style.display = 'flex';
-                document.getElementById('userEmail').textContent = user.email;
-                
-                // Configurar navegação
-                setupNavigation();
-                
-                // Configurar formulários
-                setupForms();
-                
-                // Configurar modais
-                setupModals();
-                
-                // Configurar relatórios
-                setupReports();
-                
-                // Carregar dados iniciais
-                loadDashboard();
-                loadIncomes();
-                loadExpenses();
-                loadDebts();
-                
-                if (isAdmin) {
-                    loadAdminUsers();
+                // Verificar se é administrador buscando na coleção admins
+                try {
+                    const adminDoc = await db.collection('admins').doc(user.email).get();
+                    isAdmin = adminDoc.exists;
+                    console.log("É administrador?", isAdmin);
+                    
+                    if (isAdmin) {
+                        console.log("Usuário é administrador");
+                        // Mostrar aba de administrador apenas para o admin
+                        document.querySelectorAll('.admin-only').forEach(el => {
+                            el.style.display = 'flex';
+                        });
+                    } else {
+                        console.log("Usuário não é administrador");
+                        // Garantir que a aba de administrador fique oculta para usuários comuns
+                        document.querySelectorAll('.admin-only').forEach(el => {
+                            el.style.display = 'none';
+                        });
+                    }
+                    
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('mainSystem').style.display = 'flex';
+                    document.getElementById('userEmail').textContent = user.email;
+                    
+                    // Configurar navegação
+                    setupNavigation();
+                    
+                    // Configurar formulários
+                    setupForms();
+                    
+                    // Configurar modais
+                    setupModals();
+                    
+                    // Configurar relatórios
+                    setupReports();
+                    
+                    // Carregar dados iniciais
+                    loadDashboard();
+                    loadIncomes();
+                    loadExpenses();
+                    loadDebts();
+                    
+                    if (isAdmin) {
+                        loadAdminUsers();
+                    }
+                } catch (error) {
+                    console.error("Erro ao verificar administrador:", error);
+                    showNotification('Erro ao verificar permissões de administrador!', 'error');
                 }
             } else {
                 console.log("Nenhum usuário autenticado");
@@ -1955,14 +1963,14 @@
                             </div>
                             <div class="debt-actions">
                                 ${!debt.paid ? `
-                                    <button class="btn btn-success" onclick="markDebtAsPaid('${doc.id}')">
+                                    <button class="btn btn-success" onclick="markDebtAsPaid('${debt.id}')">
                                         <i class="fas fa-check"></i> Pagar
                                     </button>
-                                    <button class="btn btn-warning" onclick="renewDebt('${doc.id}')">
+                                    <button class="btn btn-warning" onclick="renewDebt('${debt.id}')">
                                         <i class="fas fa-redo"></i> Renovar
                                     </button>
                                 ` : ''}
-                                <button class="btn btn-danger" onclick="deleteDebt('${doc.id}')">
+                                <button class="btn btn-danger" onclick="deleteDebt('${debt.id}')">
                                     <i class="fas fa-trash"></i> Excluir
                                 </button>
                             </div>
