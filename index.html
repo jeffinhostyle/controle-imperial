@@ -1139,8 +1139,12 @@
                 
                 // Verificar se é administrador buscando na coleção admins
                 try {
-                    const adminDoc = await db.collection('admins').doc(user.email).get();
-                    isAdmin = adminDoc.exists;
+                    // Buscar pelo campo 'email' em vez de usar o ID do documento
+                    const adminSnapshot = await db.collection('admins')
+                        .where('email', '==', user.email)
+                        .get();
+                    
+                    isAdmin = !adminSnapshot.empty;
                     console.log("É administrador?", isAdmin);
                     
                     if (isAdmin) {
@@ -2466,7 +2470,7 @@
             
             db.collection('users').doc(userId).update({
                 plan,
-                expires: expires
+                expires
             })
             .then(() => {
                 loadAdminUsers();
